@@ -4,11 +4,16 @@ const threadSchema=require('../models/threadModels')
 const userSchema=require('../models/userModels')
 const commentSchema=require('../models/commentModels')
 const middleware=require('../config/middleware')
+const moment=require('moment')
 //add thread
 routes.post('/add',middleware.checkToken,async(req,res)=>{
     const userId=req.decoded
+    let now=moment()
+    // let data={
+    //     caption:req.body.caption,
+    //     created_at:moment(now,'MM DD YYYY')
+    // }
     const newThread=new threadSchema(req.body)
-    console.log(newThread)
     const user=await userSchema.findById(userId)
     newThread.user_id=user
     await newThread.save()
@@ -80,7 +85,41 @@ routes.delete('/delete-comment/:threadId/:commentId',middleware.checkToken,async
 routes.get('/timeline',middleware.checkToken,async(req,res)=>{
     let userId=req.decoded
     let user=await userSchema.findById(userId)
-    let thread=await threadSchema.find({'user_id':{$in:[user.following]}}).sort({"created_at":-1}).limit(1)
-    res.status(200).json(thread)
+    let following_id=user.following.map(id=>{return id})
+    let now=moment().subtract(1, 'hours').format('YYYY-MM-DD HH:mm')
+    let tomorow=moment().add(1,'d').format('YYYY-MM-DD HH:mm')
+    let date=new Date(Date.now() - 24*60*60 * 1000)
+
+    // let thread=await threadSchema.find({'created_at':{$gt:new Date(Date.now() - 24*60*60 * 1000)}}).sort({"created_at":-1})
+    let a=[]
+    let thread=await threadSchema.find({'user_id':{$in:following_id}}).populate('user_id').sort({"created_at":-1}).then(async (res)=>{
+        res.map(d=>{
+            // console.log(moment(d.created_at).format('dd/mm/YYYY'))
+            let created_at=moment(d.created_at).format('YYYY-MM-DD HH:mm')
+            let result=moment(created_at).isAfter(now)
+            if(result===true){
+                a.push(d)
+            }
+        })
+        await threadSchema.find({'user_id':{$in:userId}}).populate('user_id').sort({"created_at":-1}).then(res=>{
+            res.map(d=>{
+                let created_at=moment(d.created_at).format('YYYY-MM-DD HH:mm')
+                let result=moment(created_at).isAfter(now)
+                if(result===true){
+                    a.push(d)
+                }
+            })
+           
+        })
+    })
+
+    // let thread=await threadSchema.find({$and:[{'created_at':{$gt:date}},{'user_id':{$in:following_id}}]})
+    // let thread=await threadSchema.find({
+    //     'user_id':{$in:following_id},
+    //     'created_at':{$gt:new Date(Date.now() - 24*60*60 * 1000)}
+    // })
+
+    console.log('object', date)
+    res.status(200).json(a )
 })
 module.exports=routes

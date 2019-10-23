@@ -119,7 +119,6 @@ routes.get('/timeline',middleware.checkToken,async(req,res)=>{
     //     'created_at':{$gt:new Date(Date.now() - 24*60*60 * 1000)}
     // })
 
-    console.log('object', date)
     res.status(200).json(a )
 })
 module.exports=routes

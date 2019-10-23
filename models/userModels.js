@@ -14,7 +14,8 @@ const userSchema=mongoose.Schema({
         required:true
     },
     avatar_url:{
-        type:String
+        type:String,
+        default:null
     },
     threads:[{
         type:mongoose.Schema.Types.ObjectId,

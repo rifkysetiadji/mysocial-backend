@@ -5,6 +5,16 @@ const bcrypt=require('bcryptjs')
 const jwt=require('jsonwebtoken')
 const secret=require('../config/secret')
 const middleware=require('../config/middleware')
+const axios =require('axios')
+const upload=require('../config/middlewareCloudinary')
+const multer=require('../config/middlewareMulter')
+const cloudinary = require('cloudinary');
+cloudinary.config({
+    cloud_name: 'mahlul-technology',
+    api_key: '961414385979978',
+    api_secret: 'VAcW1TkfS8WXbb4ttJmCLYZucSg'
+});
+
 
 //login
 routes.get('/test',(req,res)=>{
@@ -48,9 +58,16 @@ routes.post('/register',(req,res)=>{
 
 //get profile for self
 routes.get('/home/profile/',middleware.checkToken,(req,res)=>{
+    console.log('get /home/profile')
     try {
         UserSchema.findById(req.decoded,(err,result)=>{
-            res.send({message:'get success',user:result})
+            if(result!==null){
+                res.send({message:'get success',user:result})
+
+            }else{
+                res.status(404).send({message:'profile not found',user:null})
+
+            }
         })
     } catch (error) {
         console.log(error)
@@ -122,17 +139,35 @@ routes.post('/unfollow/:followingId',middleware.checkToken,async(req,res)=>{
 })
 
 //get followers
-routes.get('/followers',middleware.checkToken,async(req,res)=>{
+routes.get('/followers/:id',middleware.checkToken,async(req,res)=>{
     let userId=req.decoded
-    let user =await UserSchema.findById(userId).populate('followers')
+    let user =await UserSchema.findById(req.params.id).populate('followers')
     res.status(200).json({message:'success',user:user.followers})
 })
 
 //get following
-routes.get('/following',middleware.checkToken,async(req,res)=>{
+routes.get('/following/:id',middleware.checkToken,async(req,res)=>{
     let userId=req.decoded
-    let user =await UserSchema.findById(userId).populate('following')
+    let user =await UserSchema.findById(req.params.id).populate('following')
     res.status(200).json({message:'success',user:user.following})
 })
 
+routes.post('/update-ava',middleware.checkToken,multer,async(req,res)=>{
+    try {
+        cloudinary.uploader.upload(req.files[0].path,async(result,err)=>{
+            let userId=req.decoded
+            await UserSchema.findByIdAndUpdate(userId,{avatar_url:result.secure_url})
+            res.status(201).json({message:'success'})
+         })  
+    } catch (error) {
+        res.status(500).send({error:error})
+    }
+    
+})
+routes.put('/update-profile',middleware.checkToken,async(req,res)=>{
+    let userId=req.decoded
+    let user =await UserSchema.findByIdAndUpdate(userId,{name:req.body.name})
+    res.status(201).json({message:'success',user:user})
+
+})
 module.exports=routes

@@ -18,7 +18,7 @@ cloudinary.config({
 
 //login
 routes.get('/test',(req,res)=>{
-    res.json('asdf')
+    res.send('halllo')
 })
 routes.post('/login',(req,res)=>{
     // console.log('login',req.body)

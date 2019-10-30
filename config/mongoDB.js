@@ -1,5 +1,5 @@
 const mongoose=require('mongoose')
-mongoose.connect('mongodb://localhost:27017/mysocial').then(()=>console.log('mongodb connected'))
+mongoose.connect(`mongodb+srv://${process.env.DBUSER}:${process.env.DBPASS}@mysocial-0xyti.mongodb.net/test?retryWrites=true&w=majority`).then(()=>console.log('mongodb connected'))
     .catch((err)=>{
         console.log(err)
     })
